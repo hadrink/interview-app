@@ -1,15 +1,16 @@
-import { put, call, takeEvery, select } from "redux-saga/effects";
-import history from "../../../history";
-import { getBeers, postBeer } from "./beers.api";
+import { put, call, takeEvery, select } from 'redux-saga/effects';
+import history from '../../../history';
+import { getBeers, postBeer, rateBeer } from './beers.api';
 import {
   fetchBeers,
   fetchBeersFailure,
   fetchBeersSuccess,
   setBeers,
-  setNewlyCreatedBeer
-} from "./beers.actions";
-import { BeerActionTypes } from "./beers.model";
-import { beerItemsSelector } from "./beers.selectors";
+  setNewlyCreatedBeer,
+  updateBeer,
+} from './beers.actions';
+import { BeerActionTypes } from './beers.model';
+import { beerItemsSelector } from './beers.selectors';
 
 function* fetchBeersIfNotWorker() {
   const items = yield select(beerItemsSelector);
@@ -40,7 +41,7 @@ export function* fetchBeersWatcher() {
 function* createBeersWorker({ beer }) {
   try {
     const { data } = yield call(postBeer, beer);
-    history.push("/");
+    history.push('/');
     yield put(setNewlyCreatedBeer(data));
     yield put(fetchBeersSuccess());
   } catch (e) {
@@ -51,3 +52,18 @@ function* createBeersWorker({ beer }) {
 export function* createBeersWatcher() {
   yield takeEvery(BeerActionTypes.BEERS_CREATE, createBeersWorker);
 }
+
+function* rateBeerWorker({ beerId, score }) {
+  try {
+    const { data } = yield call(rateBeer, { id: beerId, score });
+    yield put(updateBeer(data));
+    yield put(fetchBeersSuccess());
+  } catch (e) {
+    yield put(fetchBeersFailure());
+  }
+}
+
+export function* rateBeerWatcher() {
+  yield takeEvery(BeerActionTypes.BEERS_RATE_BEER, rateBeerWorker);
+}
+
